@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Video — MahiVids</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+
+  <main class="main">
+    <div class="upload-container">
+      <div class="page-header">
+        <h1>Upload a Video</h1>
+        <p>Share your content with the world.</p>
+      </div>
+
+      <div class="form-card">
+        <% if (error) { %>
+          <div class="alert alert-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <%= error %>
+          </div>
+        <% } %>
+
+        <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="title">Title <span class="required">*</span></label>
+            <input
+              class="form-input"
+              type="text"
+              id="title"
+              name="title"
+              placeholder="Give your video a title"
+              maxlength="200"
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="description">Description</label>
+            <textarea
+              class="form-textarea"
+              id="description"
+              name="description"
+              placeholder="Tell viewers about your video (optional)"
+              rows="4"
+              maxlength="5000"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tags</label>
+            <div class="tag-input-wrap" id="tagInputWrap">
+              <div class="tag-chips" id="tagChips"></div>
+              <input type="text" class="tag-text-input" id="tagTextInput"
+                placeholder="Type a tag and press Enter…" maxlength="30" autocomplete="off">
+            </div>
+            <input type="hidden" name="tags" id="tagsHidden">
+            <div class="tag-suggestions">
+              <span class="tag-hint">Suggestions:</span>
+              <% ['Gaming','Music','Tutorial','Vlog','Education','Entertainment','Comedy','Sports','Tech','Food','Travel','Art'].forEach(function(s){ %>
+                <button type="button" class="tag-suggestion" data-tag="<%= s.toLowerCase() %>"><%= s %></button>
+              <% }); %>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Video File <span class="required">*</span></label>
+            <div class="drop-zone" id="dropZone">
+              <input type="file" id="videoFile" name="video" accept="video/*">
+              <div class="drop-content" id="dropContent">
+                <svg class="drop-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <h3>Drag &amp; drop your video here</h3>
+                <p>or click to browse &nbsp;·&nbsp; MP4, WebM, MOV, AVI &nbsp;·&nbsp; Max 500MB</p>
+              </div>
+            </div>
+
+            <div class="file-selected" id="fileSelected">
+              <svg class="file-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+              <div class="file-details">
+                <div class="file-name" id="fileName"></div>
+                <div class="file-size" id="fileSize"></div>
+              </div>
+              <button type="button" class="remove-file" id="removeFile" title="Remove">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+            <svg id="submitIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span id="submitText">Upload Video</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

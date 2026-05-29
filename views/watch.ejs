@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= video.title %> — MahiVids</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+
+  <main class="main">
+    <div class="watch-layout">
+
+      <!-- Main video column -->
+      <div class="watch-main">
+        <div class="player-wrap">
+          <video
+            src="/uploads/<%= video.filename %>"
+            controls
+            autoplay
+            playsinline
+            preload="auto"
+          ></video>
+        </div>
+
+        <div class="video-details">
+          <h1><%= video.title %></h1>
+
+          <div class="video-stats-bar">
+            <div class="stats-left">
+              <span class="stat">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <%= formatViews(video.views) %> views
+              </span>
+              <span class="stat">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <%= timeAgo(video.uploadedAt) %>
+              </span>
+              <span class="stat muted"><%= formatSize(video.size) %></span>
+            </div>
+            <div class="stats-right">
+              <button
+                id="likeBtn"
+                class="btn-like"
+                onclick="likeVideo('<%= video.id %>')"
+                data-liked="false"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                <span id="likeCount"><%= formatViews(video.likes || 0) %></span>
+              </button>
+              <button onclick="deleteVideo('<%= video.id %>')" class="btn btn-danger btn-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <% if (video.tags && video.tags.length > 0) { %>
+            <div class="watch-tags">
+              <% video.tags.forEach(function(tag){ %>
+                <a href="/?tag=<%= tag %>" class="watch-tag"><%= tag %></a>
+              <% }); %>
+            </div>
+          <% } %>
+
+          <% if (video.description) { %>
+            <div class="video-desc"><%= video.description %></div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <h3 class="sidebar-heading">More Videos</h3>
+        <% if (related.length === 0) { %>
+          <p class="no-related">No other videos yet.</p>
+        <% } else { %>
+          <div class="related-list">
+            <% related.forEach(function(v) { %>
+              <a href="/watch/<%= v.id %>" class="related-card">
+                <div class="related-thumb">
+                  <% if (v.thumbnail) { %>
+                    <img src="<%= v.thumbnail %>" alt="<%= v.title %>" loading="lazy">
+                  <% } %>
+                  <video src="/uploads/<%= v.filename %>" preload="none" muted></video>
+                  <div class="related-play">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="related-info">
+                  <div class="related-title"><%= v.title %></div>
+                  <div class="related-meta"><%= formatViews(v.views) %> views · <%= timeAgo(v.uploadedAt) %></div>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        <% } %>
+      </aside>
+
+    </div>
+
+    <!-- Comments — full width below the two-column layout -->
+    <section class="comments-section" id="comments" data-video-id="<%= video.id %>">
+      <h2 class="comments-heading">
+        Comments
+        <span class="comments-count" id="commentsCount"><%= (video.comments || []).length %></span>
+      </h2>
+
+      <!-- Post form -->
+      <form class="comment-form" id="commentForm" novalidate>
+        <div class="comment-form-row">
+          <input
+            class="comment-input"
+            type="text"
+            id="commentName"
+            placeholder="Your name (optional)"
+            maxlength="60"
+            autocomplete="off"
+          >
+        </div>
+        <div class="comment-form-row">
+          <textarea
+            class="comment-textarea"
+            id="commentText"
+            placeholder="Add a comment…"
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+        </div>
+        <div class="comment-form-actions">
+          <span class="comment-char-count" id="charCount">0 / 1000</span>
+          <button type="submit" class="btn btn-primary btn-sm" id="commentSubmit">Post comment</button>
+        </div>
+      </form>
+
+      <!-- Comment list -->
+      <div class="comment-list" id="commentList">
+        <% const comments = (video.comments || []).slice().reverse(); %>
+        <% if (comments.length === 0) { %>
+          <p class="no-comments" id="noComments">No comments yet. Be the first!</p>
+        <% } else { %>
+          <% comments.forEach(function(c) { %>
+            <div class="comment" id="comment-<%= c.id %>">
+              <div class="comment-avatar" style="background:<%= avatarColor(c.name) %>">
+                <%= c.name.charAt(0).toUpperCase() %>
+              </div>
+              <div class="comment-body">
+                <div class="comment-meta">
+                  <span class="comment-author"><%= c.name %></span>
+                  <span class="comment-time"><%= timeAgo(c.createdAt) %></span>
+                </div>
+                <p class="comment-text"><%= c.text %></p>
+              </div>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "vidshare",
+  "version": "1.0.0",
+  "description": "A modern dark video sharing website",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}

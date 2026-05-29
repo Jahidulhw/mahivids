@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MahiVids — Video Platform</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+
+  <%
+    const totalViews = videos.reduce(function(s,v){ return s + (v.views||0); }, 0);
+    const totalLikes = videos.reduce(function(s,v){ return s + (v.likes||0); }, 0);
+  %>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+        </svg>
+        Mahi's Video Platform
+      </div>
+
+      <h1 class="hero-title">
+        Sharing my videos,<br>
+        <span class="hero-title-accent">For You To Watch</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Uploading, discovering, and watching videos from me &mdash; just great content.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/upload" class="btn btn-primary btn-lg">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Upload a Video
+        </a>
+        <a href="#videos" class="btn btn-secondary btn-lg">
+          Browse Videos
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </a>
+      </div>
+
+      <% if (videos.length > 0) { %>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <strong><%= formatViews(videos.length) %></strong>
+            <span>Videos</span>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <strong><%= formatViews(totalViews) %></strong>
+            <span>Total Views</span>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <strong><%= formatViews(totalLikes) %></strong>
+            <span>Likes</span>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </section>
+
+  <main class="main" id="videos">
+    <div class="page-header">
+      <div class="header-top">
+        <div>
+          <h1>Latest Videos</h1>
+          <% if (videos.length > 0) { %>
+            <p><span id="visibleCount"><%= videos.length %></span> of <%= videos.length %> video<%= videos.length !== 1 ? 's' : '' %></p>
+          <% } %>
+        </div>
+        <% if (videos.length > 0) { %>
+          <div class="header-controls">
+          <div class="sort-group" id="sortGroup">
+            <button class="sort-btn active" data-sort="latest">Latest</button>
+            <button class="sort-btn" data-sort="views">Most Viewed</button>
+            <button class="sort-btn" data-sort="likes">Most Liked</button>
+          </div>
+          <div class="search-wrap">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="search"
+              id="searchInput"
+              class="search-input"
+              placeholder="Search videos…"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <button class="search-clear" id="searchClear" title="Clear" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          </div><!-- /.header-controls -->
+        <% } %>
+      </div>
+    </div>
+
+    <%
+      const allTags = [...new Set(videos.flatMap(function(v){ return v.tags || []; }))].sort();
+    %>
+    <% if (allTags.length > 0) { %>
+      <div class="tag-filter-bar" id="tagFilterBar">
+        <button class="tag-filter-btn active" data-tag="all">All</button>
+        <% allTags.forEach(function(tag){ %>
+          <button class="tag-filter-btn" data-tag="<%= tag %>"><%= tag %></button>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <div id="noResults" class="no-results" hidden>
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <p>No videos match <strong id="noResultsQuery"></strong></p>
+    </div>
+
+    <div class="video-grid" id="videoGrid">
+      <% if (videos.length === 0) { %>
+        <div class="empty-state">
+          <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M15 10l4.553-2.069A1 1 0 0121 8.845v6.31a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <h2>No videos yet</h2>
+          <p>Be the first to share something with the world.</p>
+          <a href="/upload" class="btn btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload the first video
+          </a>
+        </div>
+      <% } else { %>
+        <% videos.forEach(function(video, index) { %>
+          <div class="video-card"
+               data-id="<%= video.id %>"
+               data-views="<%= video.views %>"
+               data-likes="<%= video.likes || 0 %>"
+               data-date="<%= video.uploadedAt %>"
+               data-tags="<%= (video.tags || []).join(',') %>">
+
+            <div class="row-num"><%= index + 1 %></div>
+
+            <div class="row-thumb">
+              <% if (video.thumbnail) { %>
+                <img src="<%= video.thumbnail %>" alt="<%= video.title %>" loading="lazy">
+              <% } else { %>
+                <div class="thumb-placeholder">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                  </svg>
+                </div>
+              <% } %>
+              <video src="/uploads/<%= video.filename %>" preload="none" muted loop playsinline></video>
+              <% if (video.duration) { %>
+                <span class="duration-badge"><%= video.duration %></span>
+              <% } %>
+            </div>
+
+            <a href="/watch/<%= video.id %>" class="row-link">
+              <h3 class="video-title"><%= video.title %></h3>
+              <% if (video.tags && video.tags.length > 0) { %>
+                <div class="card-tags">
+                  <% video.tags.slice(0, 3).forEach(function(tag){ %>
+                    <span class="card-tag"><%= tag %></span>
+                  <% }); %>
+                  <% if (video.tags.length > 3) { %><span class="card-tag card-tag-more">+<%= video.tags.length - 3 %></span><% } %>
+                </div>
+              <% } %>
+              <div class="video-meta">
+                <span class="meta-stat">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <%= formatViews(video.views) %>
+                </span>
+                <span class="meta-stat">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                  <%= formatViews(video.likes || 0) %>
+                </span>
+                <span class="dot"></span>
+                <span><%= timeAgo(video.uploadedAt) %></span>
+              </div>
+            </a>
+
+            <div class="row-actions">
+              <a href="/watch/<%= video.id %>" class="row-play-btn" title="Play">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </a>
+              <button class="row-delete-btn" title="Delete" onclick="event.stopPropagation(); deleteVideo('<%= video.id %>')">✕</button>
+            </div>
+
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+  </main>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>
