@@ -1,18 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { execSync } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
+const cloudinary = require('cloudinary').v2;
 
-const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
-const THUMBS_DIR  = path.join(__dirname, '..', 'thumbnails');
-
-[UPLOADS_DIR, THUMBS_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+cloudinary.config(); // reads CLOUDINARY_URL env var automatically
 
 const commentSchema = new mongoose.Schema({
   id:        { type: String, default: () => uuidv4() },
@@ -25,7 +18,8 @@ const videoSchema = new mongoose.Schema({
   id:           { type: String, required: true, unique: true },
   title:        String,
   description:  String,
-  filename:     String,
+  filename:     String,   // Cloudinary public_id (used for deletion)
+  videoUrl:     String,   // Cloudinary secure URL for playback
   originalName: String,
   mimetype:     String,
   size:         Number,
@@ -40,56 +34,22 @@ const videoSchema = new mongoose.Schema({
 
 const Video = mongoose.models.Video || mongoose.model('Video', videoSchema);
 
-function generateThumbnail(videoPath, thumbPath) {
-  try {
-    execSync(
-      `ffmpeg -y -i "${videoPath}" -ss 00:00:01 -vframes 1 ` +
-      `-vf "scale=640:360:force_original_aspect_ratio=decrease,` +
-      `pad=640:360:(ow-iw)/2:(oh-ih)/2:color=black" ` +
-      `"${thumbPath}"`,
-      { stdio: 'pipe' }
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function getVideoDuration(videoPath) {
-  try {
-    const raw = execSync(
-      `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`,
-      { stdio: 'pipe' }
-    ).toString().trim();
-    const secs = Math.round(parseFloat(raw));
-    if (isNaN(secs)) return null;
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
-  } catch {
-    return null;
-  }
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename:    (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${uuidv4()}${ext}`);
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 500 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only video files are allowed.'));
-    }
+    if (file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Only video files are allowed.'));
   }
 });
+
+function formatDuration(seconds) {
+  const secs = Math.round(parseFloat(seconds));
+  if (isNaN(secs)) return null;
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 router.get('/', async (req, res) => {
   const videos = await Video.find().sort({ uploadedAt: -1 }).lean();
@@ -107,7 +67,6 @@ router.post('/upload', (req, res) => {
     const { title, description } = req.body;
 
     if (!title || !title.trim()) {
-      if (req.file) fs.unlinkSync(req.file.path);
       return res.render('upload', { error: 'Title is required.' });
     }
 
@@ -115,17 +74,32 @@ router.post('/upload', (req, res) => {
       return res.render('upload', { error: 'Please select a video file.' });
     }
 
-    const id = uuidv4();
-    const thumbPath = path.join(THUMBS_DIR, `${id}.jpg`);
-    const thumbnail = generateThumbnail(req.file.path, thumbPath)
-      ? `/thumbnails/${id}.jpg`
-      : null;
+    let cloudResult;
+    try {
+      cloudResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'video', folder: 'mahivids/videos', public_id: uuidv4() },
+          (error, result) => (error ? reject(error) : resolve(result))
+        );
+        stream.end(req.file.buffer);
+      });
+    } catch (uploadErr) {
+      return res.render('upload', { error: 'Video upload failed: ' + uploadErr.message });
+    }
 
+    const thumbnail = cloudinary.url(cloudResult.public_id, {
+      resource_type: 'video',
+      format: 'jpg',
+      transformation: [{ width: 640, height: 360, crop: 'fill', quality: 'auto' }]
+    });
+
+    const id = uuidv4();
     await Video.create({
       id,
       title:        title.trim(),
       description:  (description || '').trim(),
-      filename:     req.file.filename,
+      filename:     cloudResult.public_id,
+      videoUrl:     cloudResult.secure_url,
       originalName: req.file.originalname,
       mimetype:     req.file.mimetype,
       size:         req.file.size,
@@ -135,7 +109,7 @@ router.post('/upload', (req, res) => {
         .filter(t => t.length > 0)
         .slice(0, 10),
       thumbnail,
-      duration: getVideoDuration(req.file.path),
+      duration: cloudResult.duration ? formatDuration(cloudResult.duration) : null,
     });
 
     res.redirect(`/watch/${id}`);
@@ -196,10 +170,11 @@ router.delete('/video/:id', async (req, res) => {
   const video = await Video.findOneAndDelete({ id: req.params.id });
   if (!video) return res.status(404).json({ error: 'Video not found.' });
 
-  const filePath = path.join(UPLOADS_DIR, video.filename);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  const thumbPath = path.join(THUMBS_DIR, `${video.id}.jpg`);
-  if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+  if (video.filename) {
+    try {
+      await cloudinary.uploader.destroy(video.filename, { resource_type: 'video' });
+    } catch { /* best-effort */ }
+  }
 
   res.json({ success: true });
 });

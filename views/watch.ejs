@@ -16,7 +16,7 @@
       <div class="watch-main">
         <div class="player-wrap">
           <video
-            src="/uploads/<%= video.filename %>"
+            src="<%= video.videoUrl %>"
             controls
             autoplay
             playsinline
@@ -91,7 +91,7 @@
                   <% if (v.thumbnail) { %>
                     <img src="<%= v.thumbnail %>" alt="<%= v.title %>" loading="lazy">
                   <% } %>
-                  <video src="/uploads/<%= v.filename %>" preload="none" muted></video>
+                  <video src="<%= v.videoUrl %>" preload="none" muted></video>
                   <div class="related-play">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                       <polygon points="5 3 19 12 5 21 5 3"/>

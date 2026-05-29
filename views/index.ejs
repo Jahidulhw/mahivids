@@ -29,7 +29,7 @@
       </h1>
 
       <p class="hero-subtitle">
-        Uploading, discovering, and watching videos from me &mdash; just great content.
+       watching videos from me!
       </p>
 
       <div class="hero-actions">
@@ -165,7 +165,7 @@
                   </svg>
                 </div>
               <% } %>
-              <video src="/uploads/<%= video.filename %>" preload="none" muted loop playsinline></video>
+              <video src="<%= video.videoUrl %>" preload="none" muted loop playsinline></video>
               <% if (video.duration) { %>
                 <span class="duration-badge"><%= video.duration %></span>
               <% } %>
