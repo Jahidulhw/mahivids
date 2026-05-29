@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
 
@@ -61,6 +62,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n  MahiVids running at http://localhost:${PORT}\n`);
-});
+
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n  MahiVids running at http://localhost:${PORT}\n`);
+    });
+  })
+  .catch(err => {
+    console.error('MongoDB connection failed:', err.message);
+    process.exit(1);
+  });

@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(kill %1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/upload)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/nonexistent)",
+      "Bash(xargs kill -9)",
+      "Bash(npm start *)",
+      "Bash(curl -s -o /dev/null -w \"GET /        → %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"GET /upload  → %{http_code}\\\\n\" http://localhost:3000/upload)",
+      "Bash(curl -s -o /dev/null -w \"GET /missing → %{http_code}\\\\n\" http://localhost:3000/missing)",
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npx playwright *)",
+      "Bash(ffmpeg -version)",
+      "Bash(ffmpeg -y -f lavfi -i color=c=0x1a0533:size=1280x720:rate=30 -f lavfi -i sine=frequency=440:sample_rate=44100 -vf 'drawtext=text='\\\\''VidShare Test Video'\\\\'':fontcolor=white:fontsize=52:x=\\(w-text_w\\)/2:y=\\(h-text_h\\)/2-40:fontfile=/System/Library/Fonts/Helvetica.ttc, *)",
+      "Bash(ffmpeg -y -f lavfi -i color=c=0x1a0533:size=1280x720:rate=30 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 6 -c:v libx264 -c:a aac /tmp/test-video.mp4)",
+      "Bash(curl *)",
+      "Bash(node *)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(gh auth *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh repo *)"
+    ]
+  }
+}
